@@ -1,12 +1,15 @@
-
-
-
 class Node {
     // A node holds some some data pairs
-    constructor(x, y) {
+    constructor(x, y, min_samples_leaf) {
+        // TODO order at the node level? May need to re-map
         this.x = x;
         this.y = y;
         this.n_c = this.x.length;
+        this.min_samples_leaf = min_samples_leaf;
+        this.traverse_ix = 0;
+
+        var ix_sort = a =>[...a.keys()].sort((b,c)=>a[b]-a[c]);
+        this.order_x = ix_sort(this.x)
     };
 
     // Gets the sum of squares by splitting at the index
@@ -24,8 +27,9 @@ class Node {
             []
         )
 
-        console.log('left_size: ' + left_ix.length)
-        console.log('right_size: '+ right_ix.length)
+        if ((left_ix.length < this.min_samples_leaf) || (right_ix.length < this.min_samples_leaf)) {
+            return(NaN)
+        }
 
         // Get means of left and right partitions
         var left_mean = 0;
@@ -41,40 +45,32 @@ class Node {
         var right_sse = 0;
         left_ix.forEach(ix => {right_sse += (this.y[ix] - right_mean)**2});
 
-        return(left_sse + right_sse)
+        return({
+            'ix': ix,
+            'left_mean': left_mean,
+            'right_mean': right_mean,
+        });
 
     };
-
 }
 
 class RegressionTree {
     constructor(x, y, min_samples_leaf) {
+        // x should be a nested array
         this.x = x;
         this.y = y;
-        this.min_samples_leaf;
+        this.p = this.x.length;
+        this.min_samples_leaf = min_samples_leaf;
     };
 
-    begin() {
-        var top_node = new Node(this.x, this.y)
-
-        var best_ix = 0;
-        var min_sse = top_node.get_ss_split(0);
-
-        for (var i=1; i< this.x.length; i++) {
-            var sse = top_node.get_ss_split(i);
-            if (sse < min_sse) {
-                min_sse = sse;
-                best_ix = i;
-            }
-            
-        }
-        console.log(best_ix);
-    }
+    get_node(p_ix) {
+        var node = new Node(this.x[p_ix], this.y, this.min_samples_leaf);
+        return(node);
+    };
 
 }
 
 
-var a = jsIris.petalLength
-var b = jsIris.petalWidth
-var rt = new RegressionTree(a,b,3)
-rt.begin()
+var x = [jsIris.petalLength, jsIris.petalWidth];
+var y = jsIris.petalWidth
+var rt = new RegressionTree(x,y,3)
